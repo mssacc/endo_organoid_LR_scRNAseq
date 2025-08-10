@@ -13,7 +13,7 @@ library(tidyr)
 all_samples_integrated <- readRDS("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/all_samples_integrated.rds")
 
 #Define cell subtypes of interest
-cell_subtypes <- c("Pre-Ciliated")
+cell_subtypes <- c("Pre-Unciliated", "Unciliated", "Ciliated", "Secretory", "Pre-Ciliated", "Proliferative")
 
 #Load GTF and gene name reference
 tx2gene <- import("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/flames_output_copies/isoform_annotated.gtf")
