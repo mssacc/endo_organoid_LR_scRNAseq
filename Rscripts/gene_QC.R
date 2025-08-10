@@ -1,12 +1,7 @@
 #Rscript - Gene QC (doublets, empty droplets, ambient RNA, low cell quality)
 
-library(DropletUtils)
-#Set library
-.libPaths("/home/mssacc/R_libs_4.4")
-
 #Load required libraries
-#library(presto)
-
+library(DropletUtils)
 library(SeuratObject)
 library(Seurat)
 library(BiocParallel)
