@@ -1,13 +1,13 @@
-# Load required libraries
+#Load required libraries
 library(fgsea)
 library(msigdbr)
 library(dplyr)
 library(ggplot2)
 library(tibble)
 library(forcats)
-library(readxl)     # For reading specific sheet from Excel
+library(readxl)
 
-# Load pathway collections
+#Load pathway collections
 msigdb_hallmark <- msigdbr(species = "Homo sapiens", category = "H")
 pathways_hallmark <- split(msigdb_hallmark$gene_symbol, msigdb_hallmark$gs_name)
 
@@ -16,23 +16,23 @@ pathways_go_bp <- split(msigdb_go_bp$gene_symbol, msigdb_go_bp$gs_name)
 
 all_pathways <- list(Hallmark = pathways_hallmark, GO_BP = pathways_go_bp)
 
-# Load the "all_substrates" sheet from your Excel file
+#Load the "all_substrates" sheet from your Excel file
 substrate_file <- "/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/ubiquitination_assessment.xlsx"  # Change if needed
 df <- read_excel(substrate_file, sheet = "all_substrates")
 
-# Clean and prepare gene list
+#Clean and prepare gene list
 df <- df %>%
   filter(!is.na(`Confidence Score`)) %>%
   rename(Gene = `Gene Symbol(Substrate)`) %>%
   mutate(Gene = toupper(Gene)) %>%
   distinct(Gene, .keep_all = TRUE)
 
-# Create named score vector
+#Create named score vector
 ranks <- df$`Confidence Score`
 names(ranks) <- df$Gene
 ranks <- sort(ranks, decreasing = TRUE)
 
-# Run fgsea
+#Run fgsea
 fgsea_combined_results <- list()
 
 for (category_name in names(all_pathways)) {
@@ -44,12 +44,12 @@ for (category_name in names(all_pathways)) {
     fgsea_res$Category <- category_name
     fgsea_combined_results[[category_name]] <- fgsea_res}}
 
-# Combine all
+#Combine all
 fgsea_all <- bind_rows(fgsea_combined_results)
 
 if (nrow(fgsea_all) == 0) stop("No significant fgsea results.")
 
-# Clean and select top results
+#Clean and select top results
 fgsea_filtered <- fgsea_all %>%
   filter(pval < 0.05) %>%
   mutate(pathway = sub("^HALLMARK_|^GOBP_", "", pathway))
