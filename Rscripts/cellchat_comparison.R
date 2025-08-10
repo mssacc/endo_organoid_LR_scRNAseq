@@ -12,24 +12,22 @@ ptm = Sys.time()
 #Load CellChat object of each dataset and merge them together
 cellchat.fer <- readRDS("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/cellchat/cellchat_fertile.rds")
 cellchat.inf <- readRDS("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/cellchat/cellchat_infertile.rds")
+
 object.list <- list(Fertile = cellchat.fer, Infertile = cellchat.inf)
+
 cellchat <- mergeCellChat(object.list, add.names = names(object.list))
-#> Merge the following slots: 'data.signaling','images','net', 'netP','meta', 'idents', 'var.features' , 'DB', and 'LR'.
 cellchat
-#> An object of class CellChat created from a merged object with multiple datasets 
-#>  1132 signaling genes.
-#>  8077 cells. 
-#> CellChat analysis of single cell RNA-seq data!
+
 execution.time = Sys.time() - ptm
 
 #Define custom colours
 colours.celltype <- c("Pre-Unciliated" = "#F8766D", 
-                        "Unciliated" = "#ABA300", 
-                        "Ciliated" = "#0CB702", 
-                        "Secretory" = "#00BFC4", 
-                        "Pre-Ciliated" = "#849AFF",
-                        "Proliferative" = "#FF61CC")
-colours.fertility <- c("Fertile" = "palegreen3",
+                      "Unciliated"     = "#ABA300", 
+                      "Ciliated"       = "#0CB702", 
+                      "Secretory"      = "#00BFC4", 
+                      "Pre-Ciliated"   = "#849AFF",
+                      "Proliferative"  = "#FF61CC")
+colours.fertility <- c("Fertile"   = "palegreen3",
                        "Infertile" = "#F8766D")
 
 
@@ -182,39 +180,11 @@ gg1 <- netVisual_bubble(cellchat, sources.use = 1, targets.use = c(2:6),  compar
 gg2 <- netVisual_bubble(cellchat, sources.use = 1, targets.use = c(2:6),  comparison = c(1, 2), max.dataset = 1, title.name = "Decreased signaling in Infertile", angle.x = 45, remove.isolate = T)
 gg1 + gg2
 
-#Fertile enriched pathways
-pathways.show <- c("CDH1","ADGRA","NCAM","CEACAM","SPP1","OCLN","EPHB","EDA","NOTCH","CLDN","AGRN","Netrin","NRXN","EGF","CD46","NRG","CADM","THBS","ADGRB","NECTIN","PARs","CSF")
-  #Most notable
-  pathways.show <- c("CDH1","CLDN","NOTCH","NCAM","OCLN","ADGRA","SPP1","Netrin","NRXN","EGF","NRG","CADM","ADGRB","NECTIN","PARs")
-  pathways.show <- c("CDH1","CLDN","NOTCH","NCAM","OCLN","SPP1","EGF","CADM")
-  
-#Infertile enriched pathways
-pathways.show <- c("IGF","PTPR","PROCR","CDH5","CCL","PROC","LIFR","PECAM1","ANGPTL","GAS","SEMA5","TGFb","ADGRL","IGFBP","SEMA3","TRAIL","IL1","APP","MPZ","ACTIVIN","JAM","LAMININ","COLLAGEN")
-  #Most notable
-  pathways.show <-c("TGFb","PECAM1","LIFR","PTPR","IGF","CDH5","ADGRL","IGFBP","IL1","MPZ","JAM")
-  pathways.show <- c("LAMININ")
-  pathways.show <- c("COLLAGEN") 
-
-  
-pathways.show <- ("TGFb")
-netVisual_bubble(cellchat,
-                 sources.use = c(1:6), targets.use = c(1:6),
-                 signaling = pathways.show, comparison = c(1, 2),
-                 angle.x = 45, font.size = 8) +
-  theme(axis.text.x = element_text(size = 8),  # Increase x-axis text size
-        axis.text.y = element_text(size = 12),
-        legend.text = element_text(size = 10),  # Increase legend text size
-        legend.title = element_text(size = 10), # Increase legend title size
-        legend.key.size = unit(1, "cm"))
-
 
 #CellChat can identify the up-regulated (increased) and down-regulated (decreased) signaling ligand-receptor pairs in one dataset compared to the other dataset.
 gg1 <- netVisual_bubble(cellchat, sources.use = c(1:6), targets.use = c(1:6),  comparison = c(1, 2),signaling = pathways.show, max.dataset = 2, title.name = "Increased signaling in Infertile", angle.x = 45, remove.isolate = T)
 gg2 <- netVisual_bubble(cellchat, sources.use = c(1:6), targets.use = c(1:6),  comparison = c(1, 2), signaling = pathways.show,max.dataset = 1, title.name = "Decreased signaling in Infertile", angle.x = 45, remove.isolate = T)
 gg1 + gg2
-
-netVisual_bubble(cellchat, sources.use = c(1), targets.use = c(1:6), signaling = pathways.show, comparison = c(1, 2), angle.x = 45)
-netAnalysis_contribution(cellchat, signaling = pathways.show)
 
 
 #Compute the contribution of each ligand-receptor pair to the overall signaling pathway and visualize cell-cell communication mediated by a single ligand-receptor pair
@@ -223,22 +193,26 @@ netAnalysis_contribution(cellchat, sources.use = c(1:6), targets.use = c(1:6),  
 #Identify dysfunctional signaling by using differential expression anahttps://spartan-ood.hpc.unimelb.edu.au/rnode/spartan-bm131.hpc.unimelb.edu.au/36639/graphics/plot_zoom_png?width=499&height=831lysis
 #Define a positive dataset (the dataset with positive fold change against the other dataset)
 pos.dataset = "Infertile"
+
 #Define a char name used for storing the results of differential expression analysis
 features.name = paste0(pos.dataset, ".merged")
+
 #Perform differential expression analysis 
 #CellChat v2 performs an ultra-fast Wilcoxon test using the presto package, which gives smaller values of logFC. Thus we here set a smaller value of thresh.fc. Users can also provide a vector and dataframe of customized DEGs by modifying the cellchat@var.features$LS.merged and cellchat@var.features$LS.merged.info. 
 cellchat <- identifyOverExpressedGenes(cellchat, group.dataset = "datasets", pos.dataset = pos.dataset, features.name = features.name, only.pos = FALSE, thresh.pc = 0.1, thresh.fc = 0.05,thresh.p = 0.05, group.DE.combined = FALSE) 
+
 #Map the results of differential expression analysis onto the inferred cell-cell communications to easily manage/subset the ligand-receptor pairs of interest
 net <- netMappingDEG(cellchat, features.name = features.name, variable.all = TRUE)
+
 #Extract the ligand-receptor pairs with upregulated ligands in infertile
-net.up <- subsetCommunication(cellchat, net = net, datasets = "Infertile",ligand.logFC = 0.05, receptor.logFC = NULL)
+net.up <- subsetCommunication(cellchat, net = net, datasets = "Infertile", ligand.logFC = 0.05, receptor.logFC = NULL)
+
 #Extract the ligand-receptor pairs with upregulated ligands and upregulated receptors in NL, i.e.,downregulated in LS
-net.down <- subsetCommunication(cellchat, net = net, datasets = "Fertile",ligand.logFC = -0.05, receptor.logFC = NULL)
+net.down <- subsetCommunication(cellchat, net = net, datasets = "Fertile", ligand.logFC = -0.05, receptor.logFC = NULL)
+
 #Since the signaling genes in the net.up and net.down might be complex with multi-subunits, we can do further deconvolution to obtain the individual signaling genes.
 gene.up <- extractGeneSubsetFromPair(net.up, cellchat)
 gene.down <- extractGeneSubsetFromPair(net.down, cellchat)
-#Users can also find all the significant outgoing/incoming/both signaling according to the customized features and cell groups of interest
-#df <- findEnrichedSignaling(object.list[[2]], features = c("CCL19", "CXCL12"), idents = c("Inflam. FIB", "COL11A1+ FIB"), pattern ="outgoing")
 
 #Visualize the identified up-regulated and down-regulated signaling ligand-receptor pairs
 #(A) Bubble plot to visualize up-regulated and down-regulated signaling ligand-receptor pairs using bubble plot or chord diagram.
@@ -247,18 +221,12 @@ gg1 <- netVisual_bubble(cellchat, pairLR.use = pairLR.use.up, sources.use = c(1:
 pairLR.use.down = net.down[, "interaction_name", drop = F]
 gg2 <- netVisual_bubble(cellchat, pairLR.use = pairLR.use.down, sources.use = c(1:6), targets.use = c(1:6), comparison = c(1, 2),  angle.x = 45, remove.isolate = T,title.name = paste0("Down-regulated signaling in ", names(object.list)[2]))
 gg1 + gg2
+
 #(B) Chord diagram
 par(mfrow = c(1,2), xpd=TRUE)
 netVisual_chord_gene(object.list[[2]], sources.use = 1, targets.use = c(2:3), slot.name = 'net', net = net.up, lab.cex = 0.8, small.gap = 3.5, title.name = paste0("Up-regulated signaling in ", names(object.list)[2]))
 netVisual_chord_gene(object.list[[1]], sources.use = 1, targets.use = c(2:3), slot.name = 'net', net = net.down, lab.cex = 0.8, small.gap = 3.5, title.name = paste0("Down-regulated signaling in ", names(object.list)[2]))
 #> You may try the function `netVisual_chord_cell` for visualizing individual signaling pathway
-
-#(C) Wordcloud plot
-#Visualize the enriched ligands, signaling,or ligand-receptor pairs in one condition compared to another condition using wordcloud
-# visualize the enriched ligands in the first condition
-computeEnrichmentScore(net.down, species = 'human', variable.both = TRUE)
-# visualize the enriched ligands in the second condition
-computeEnrichmentScore(net.up, species = 'human', variable.both = TRUE)
 
 
 #Part IV: Visually compare cell-cell communication using Hierarchy plot, Circle plot or Chord diagram
@@ -273,26 +241,7 @@ for (i in 1:length(object.list)) {
                       edge.weight.max = weight.max[1], 
                       edge.width.max = 10, 
                       signaling.name = paste(pathways.show, names(object.list)[i]),
-                      color.use = colours.celltype)  # Apply custom colors
-}
-
-pathways.show <- c("LIFR") 
-par(mfrow = c(1,2), xpd=TRUE)
-ht <- list()
-for (i in 1:length(object.list)) {
-  ht[[i]] <- netVisual_heatmap(object.list[[i]], signaling = pathways.show, color.heatmap = "Reds",title.name = paste(pathways.show, "signaling ",names(object.list)[i]))
-}
-
-ComplexHeatmap::draw(ht[[1]] + ht[[2]], ht_gap = unit(0.5, "cm"))
-
-#Chord diagram
-pathways.show <- c("BMP") 
-par(mfrow = c(1,2), xpd=TRUE)
-for (i in 1:length(object.list)) {
-  netVisual_aggregate(object.list[[i]], signaling = pathways.show, layout = "chord", signaling.name = paste(pathways.show, names(object.list)[i]))
-}
-
-par(mfrow = c(1, 2), xpd=TRUE)
+                      color.use = colours.celltype)}
 
 
 #Part V: Compare the signaling gene expression distribution between different datasets
