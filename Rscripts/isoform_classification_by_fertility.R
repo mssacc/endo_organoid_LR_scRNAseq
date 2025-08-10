@@ -1,5 +1,4 @@
 ###Isoform classification by fertility
-# ======================================================================================================================
 
 #Load required libraries
 library(Seurat)
