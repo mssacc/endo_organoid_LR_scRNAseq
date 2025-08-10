@@ -1,8 +1,5 @@
 #Rscript - CellChat Infertile Samples
 
-#Set library
-.libPaths("/home/mssacc/R_libs_4.4")
-
 #Load required libraries
 library(presto)
 library(ggplot2)
@@ -12,7 +9,6 @@ library(patchwork)
 library(SeuratObject)
 library(Seurat)
 options(stringsAsFactors = FALSE)
-# reticulate::use_python("/Users/suoqinjin/anaconda3/bin/python", required=T)
 
 ###Part I: Data input & processing and initialization of CellChat object
   #Load data
@@ -89,69 +85,7 @@ options(stringsAsFactors = FALSE)
   for (i in 1:nrow(mat)) {
     mat2 <- matrix(0, nrow = nrow(mat), ncol = ncol(mat), dimnames = dimnames(mat))
     mat2[i, ] <- mat[i, ]
-    netVisual_circle(mat2, vertex.weight = groupSize, weight.scale = T, edge.weight.max = max(mat), title.name = rownames(mat)[i])
-  }
-
-
-###Part III: Visualization of cell-cell communication network
-  #In all visualization plots, edge colors are consistent with the sources as sender, and edge weights are proportional to the interaction strength. Thicker edge line indicates a stronger signal. In the Hierarchy plot and Circle plot, circle sizes are proportional to the number of cells in each cell group. In the hierarchy plot, solid and open circles represent source and target, respectively. In the Chord diagram, the inner thinner bar colors represent the targets that receive signal from the corresponding outer bar. The inner bar size is proportional to the signal strength received by the targets. Such inner bar is helpful for interpreting the complex chord diagram. Note that there exist some inner bars without any chord for some cell groups, please just igore it because this is an issue that has not been addressed by circlize package.
-  #Here we take input of one signaling pathway as an example.
-  pathways.show <- c("WNT") 
-  #All the signaling pathways showing significant communications can be accessed by 
-  cellchat@netP$pathways
-  #Hierarchy plot
-  #Here we define `vertex.receive` so that the left portion of the hierarchy plot shows signaling to fibroblast and the right portion shows signaling to immune cells 
-  vertex.receiver = seq(1,4) # a numeric vector. 
-  netVisual_aggregate(cellchat, signaling = pathways.show,  vertex.receiver = vertex.receiver)
-  #Circle plot
-  par(mfrow=c(1,1))
-  netVisual_aggregate(cellchat, signaling = pathways.show, layout = "circle")
-
-  #Compute the contribution of each ligand-receptor pair to the overall signaling pathway and visualize cell-cell communication mediated by a single ligand-receptor pair
-  netAnalysis_contribution(cellchat, signaling = pathways.show)
-
-  #We can also visualize the cell-cell communication mediated by a single ligand-receptor pair. We provide a function extractEnrichedLR to extract all the significant interactions (L-R pairs) and related signaling genes for a given signaling pathway.
-  pairLR.WNT <- extractEnrichedLR(cellchat, signaling = pathways.show, geneLR.return = FALSE)
-  LR.show <- pairLR.WNT[8,] #show one ligand-receptor pair, number indicates pair selected - listed in alphabetical/numerical order from plot generated above
-  #Hierarchy plot
-  vertex.receiver = seq(1,4) #a numeric vector
-  netVisual_individual(cellchat, signaling = pathways.show,  pairLR.use = LR.show, vertex.receiver = vertex.receiver)
-  #Circle plot
-  netVisual_individual(cellchat, signaling = pathways.show, pairLR.use = LR.show, layout = "circle")
-
-  #Access all the signaling pathways showing significant communications
-  pathways.show.all <- cellchat@netP$pathways
-  #Check the order of cell identity to set suitable vertex.receiver
-  levels(cellchat@idents)
-  vertex.receiver = seq(1,5)
-
-  ##Visualize cell-cell communication mediated by multiple ligand-receptors or signaling pathways
-  #Bubble plot
-  #Show all the significant interactions (LR pairs) from some cell groups (defined by 'sources.use') to other cell groups (defined by 'targets.use')
-  netVisual_bubble(cellchat, sources.use = 1, targets.use = c(2,4), remove.isolate = FALSE)
-  netVisual_bubble(cellchat, sources.use = 2, targets.use = c(1), remove.isolate = FALSE)
-
-  #Show all the significant interactions (LR pairs) associated with certain signaling pathways
-  netVisual_bubble(cellchat, sources.use = 1, targets.use = c(2:5), signaling = c("WNT"), remove.isolate = FALSE)
-  #Show all the significant interactions (LR pairs) based on user's input (defined by `pairLR.use`)
-  pairLR.use <- extractEnrichedLR(cellchat, signaling = c("WNT","NOTCH"))
-  netVisual_bubble(cellchat, sources.use = 1, targets.use = c(2:5), pairLR.use = pairLR.use, remove.isolate = TRUE)
-  
-  #Chord diagram
-  #Show all the significant interactions (L-R pairs) from some cell groups (defined by 'sources.use') to other cell groups (defined by 'targets.use')
-  netVisual_chord_gene(cellchat, sources.use = 1, targets.use = c(2), lab.cex = 0.5,legend.pos.y = 30)
-  netVisual_chord_gene(cellchat, sources.use = c(1,2,3,4), targets.use = 5, legend.pos.x = 15)
-  #Show all the significant interactions (L-R pairs) associated with certain signaling pathways
-  netVisual_chord_gene(cellchat, sources.use = c(1,2,3,4), targets.use = c(5), signaling = c("WNT","NOTCH"),legend.pos.x = 8)
-  #Show all the significant signaling pathways from some cell groups (defined by 'sources.use') to other cell groups (defined by 'targets.use')
-  netVisual_chord_gene(cellchat, sources.use = c(1,2,3,4), targets.use = c(5:11), slot.name = "netP", legend.pos.x = 10)
-
-  #Plot the signaling gene expression distribution using violin/dot plot
-  plotGeneExpression(cellchat, signaling = "WNT", enriched.only = TRUE, type = "violin")
-  print(as.numeric(execution.time, units = "secs"))
-  #By default, plotGeneExpression only shows the expression of signaling genes related to the inferred significant communications. USERS can show the expression of all signaling genes related to one signaling pathway by
-  plotGeneExpression(cellchat, signaling = "WNT", enriched.only = FALSE)
-  execution.time = Sys.time() - ptm
+    netVisual_circle(mat2, vertex.weight = groupSize, weight.scale = T, edge.weight.max = max(mat), title.name = rownames(mat)[i])}
 
 
 ###Part IV: Systems analysis of cell-cell communication network
