@@ -1,8 +1,5 @@
 #Rscript - Gene ID (ENSIGID) to Symbol
 
-#Set library
-.libPaths("/home/mssacc/R_libs_4.4")
-
 #Load required libraries
 library(data.table)
 library(tidyr)
