@@ -1,5 +1,4 @@
-#Set library path (optional, if needed)
-.libPaths("/home/mssacc/R_libs_4.4")
+###DESeq2 differentially expressed isoforms with BEC
 
 #Load required libraries
 library(Seurat)
