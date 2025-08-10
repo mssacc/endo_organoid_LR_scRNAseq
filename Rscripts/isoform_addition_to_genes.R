@@ -1,8 +1,5 @@
 #Adding isoform counts to gene count seurat object
 
-#Set library
-.libPaths("/home/mssacc/R_libs_4.4")
-
 #Load required libraries
 library(Matrix)
 library(dplyr)
