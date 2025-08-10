@@ -1,8 +1,5 @@
 #Merge multisamples, run unintegrated analysis, run integrated analysis
 
-#Set library
-.libPaths("/home/mssacc/R_libs_4.4")
-
 #Load required libraries
 library(SeuratObject)
 library(Seurat)
