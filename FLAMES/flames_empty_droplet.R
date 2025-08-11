@@ -21,16 +21,16 @@ genome = "/data/gpfs/projects/punim1901/genomes/hg38.analysisSet.fa"
 
 #Barcode
 barcodes_file = c("/data/gpfs/projects/punim1901/flames_v2/flames_droplet_analysis/empty_bc_list/E170_emtpy_bc_list.csv",
-            		  "/data/gpfs/projects/punim1901/flames_v2/flames_droplet_analysis/empty_bc_list/E191_emtpy_bc_list.csv",
-            		  "/data/gpfs/projects/punim1901/flames_v2/flames_droplet_analysis/empty_bc_list/E226_emtpy_bc_list.csv",
-            		  "/data/gpfs/projects/punim1901/flames_v2/flames_droplet_analysis/empty_bc_list/E231_emtpy_bc_list.csv",	
-            		  "/data/gpfs/projects/punim1901/flames_v2/flames_droplet_analysis/empty_bc_list/E333_emtpy_bc_list.csv",
-            		  "/data/gpfs/projects/punim1901/flames_v2/flames_droplet_analysis/empty_bc_list/E435_emtpy_bc_list.csv")
+            	  "/data/gpfs/projects/punim1901/flames_v2/flames_droplet_analysis/empty_bc_list/E191_emtpy_bc_list.csv",
+            	  "/data/gpfs/projects/punim1901/flames_v2/flames_droplet_analysis/empty_bc_list/E226_emtpy_bc_list.csv",
+            	  "/data/gpfs/projects/punim1901/flames_v2/flames_droplet_analysis/empty_bc_list/E231_emtpy_bc_list.csv",	
+            	  "/data/gpfs/projects/punim1901/flames_v2/flames_droplet_analysis/empty_bc_list/E333_emtpy_bc_list.csv",
+            	  "/data/gpfs/projects/punim1901/flames_v2/flames_droplet_analysis/empty_bc_list/E435_emtpy_bc_list.csv")
 	
 sce <- sc_long_multisample_pipeline(fastqs=fastqs, 
-                        				    outdir=output, 
+                        			outdir=output, 
                                     annot=GTF, 
-                        				    genome_fa=genome, 
-                        				    config_file=config_file, 
-                        				    barcodes_file=barcodes_file, 
-                        				    expect_cell_numbers=c(2000,2000,2000,2000,2000,2000))
+                        			genome_fa=genome, 
+                        			config_file=config_file, 
+                        			barcodes_file=barcodes_file, 
+                        			expect_cell_numbers=c(2000,2000,2000,2000,2000,2000))
