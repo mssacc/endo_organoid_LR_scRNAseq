@@ -36,13 +36,10 @@ sccomp_result |>
 significant <- sccomp_result %>%
   filter(parameter == "fertilityInfertile", c_FDR < 0.05)
 
-
 sccomp_result |> 
   sccomp_boxplot(factor = "fertility") +
-  theme(
-    axis.text = element_text(size = 12),        # Increase axis tick labels font size
-    axis.title = element_text(size = 12),       # Increase axis titles font size
-    legend.text = element_text(size = 12),      # Legend text size
-    legend.title = element_text(size = 12),     # Legend title size
-    plot.title = element_text(size = 12, face = "bold")  # Plot title font size
-  )
+  theme(axis.text = element_text(size = 12),      
+        axis.title = element_text(size = 12),      
+        legend.text = element_text(size = 12),     
+        legend.title = element_text(size = 12),    
+        plot.title = element_text(size = 12, face = "bold"))
