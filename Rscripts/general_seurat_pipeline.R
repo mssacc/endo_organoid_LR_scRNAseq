@@ -147,8 +147,8 @@ all_samples_integrated <- RenameIdents(all_samples_integrated,
                                        "5" = "Proliferative")
 
 #Regenerate graphs with cluster names
-plot1 <- DimPlot(all_samples_integrated, reduction="umap")+
-  theme(legend.text = element_text(size = 18)) 
+plot1 <- DimPlot(all_samples_integrated, reduction="umap") +
+            theme(legend.text = element_text(size = 18)) 
 plot1
 DimPlot(all_samples_integrated, reduction="umap", group.by="cell_type")
 DimPlot(all_samples_integrated, reduction="umap", group.by="cell_type", split.by="fertility")
@@ -156,6 +156,11 @@ DimPlot(all_samples_integrated, reduction="umap", group.by="cell_type", split.by
 #Rejoin gene datasets after integration
 all_samples_integrated <- JoinLayers(all_samples_integrated)
 all_samples_integrated <- JoinLayers(all_samples_integrated, assay="iso")
+
+#Find marker genes per cluster
+all_markers <- FindAllMarkers(all_samples_integrated, assay="RNA")
+all_markers <- subset(all_markers, subset= p_val_adj<0.05)
+
 
 #Save RDS
 saveRDS(all_samples_integrated, file = "/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/all_samples_integrated.rds")
