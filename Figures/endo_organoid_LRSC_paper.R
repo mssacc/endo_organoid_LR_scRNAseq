@@ -1467,8 +1467,10 @@ ggplot(top_fgsea, aes(x = NES, y = fct_reorder(pathway, NES), color = pval, size
         axis.text.y.right = element_text(size = 11),  # Add this line
         axis.title.y = element_blank())
 
+                
+#E - NOTCH signalling (generated in BioRender)
 
-
+                
 
 ### ====================================================================================================================
 ### ====================================================================================================================
@@ -2812,9 +2814,14 @@ VlnPlot(all_samples_integrated, features = "ENST00000383329.7-HLA-C",
   ggtitle("ENST00000383329.9-HLA-C Isoform Expression by Sample")
 
 
-
+                              
 ### ====================================================================================================================
-###Supplementary Figure 9 - RBCK1
+###Supplementary Figure 9 - HLA-C Mapping
+#A + B - Generated using IGV
+
+                              
+### ====================================================================================================================
+###Supplementary Figure 10 - RBCK1
 #A - Isoform division of RBCK1
 features <- rownames(all_samples_integrated@assays$iso@features)
 gene <- "RBCK1"
