@@ -152,12 +152,6 @@ E333_iso <- E333_df_genesymbol
 E435_iso <- E435_df_genesymbol
 
 
-
-###Import if needed
-
-
-
-
 #Import gene matrices
 E170 <- readRDS("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/E170_genes_filtered.rds")
 E191 <- readRDS("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/E191_genes_filtered.rds")
@@ -172,6 +166,7 @@ E226_iso <- read.csv("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/E
 E231_iso <- read.csv("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/E231_iso.csv", header=TRUE, row.names=1)
 E333_iso <- read.csv("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/E333_iso.csv", header=TRUE, row.names=1)
 E435_iso <- read.csv("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/E435_iso.csv", header=TRUE, row.names=1)
+
 ###Create Seurat objects with isoform expression data
 E170_iso_object <- CreateSeuratObject(counts=E170_iso, project="E170")
 E191_iso_object <- CreateSeuratObject(counts=E191_iso, project="E191")
@@ -205,6 +200,7 @@ E435_oarfish_iso_matched_gene <- subset(E435_iso_object, cells =E435@graphs[["RN
   E170_df_iso <- E170_df_iso[rowSums(E170_df_iso) != 0, ]
   #Create iso assay
   E170[["iso"]] <- CreateAssay5Object(counts = E170_df_iso)
+
 #E191
   #Rejoin data sets after integration
   E191_oarfish_iso_matched_gene <- JoinLayers(E191_oarfish_iso_matched_gene)
@@ -214,6 +210,7 @@ E435_oarfish_iso_matched_gene <- subset(E435_iso_object, cells =E435@graphs[["RN
   E191_df_iso <- E191_df_iso[rowSums(E191_df_iso) != 0, ]
   #Create iso assay
   E191[["iso"]] <- CreateAssay5Object(counts = E191_df_iso)
+
 #E226
   #Rejoin data sets after integration
   E226_oarfish_iso_matched_gene <- JoinLayers(E226_oarfish_iso_matched_gene)
@@ -223,6 +220,7 @@ E435_oarfish_iso_matched_gene <- subset(E435_iso_object, cells =E435@graphs[["RN
   E226_df_iso <- E226_df_iso[rowSums(E226_df_iso) != 0, ]
   #Create iso assay
   E226[["iso"]] <- CreateAssay5Object(counts = E226_df_iso)
+
 #E231
   #Rejoin data sets after integration
   E231_oarfish_iso_matched_gene <- JoinLayers(E231_oarfish_iso_matched_gene)
@@ -232,6 +230,7 @@ E435_oarfish_iso_matched_gene <- subset(E435_iso_object, cells =E435@graphs[["RN
   E231_df_iso <- E231_df_iso[rowSums(E231_df_iso) != 0, ]
   #Create iso assay
   E231[["iso"]] <- CreateAssay5Object(counts = E231_df_iso)
+
 #E333
   #Rejoin data sets after integration
   E333_oarfish_iso_matched_gene <- JoinLayers(E333_oarfish_iso_matched_gene)
@@ -241,6 +240,7 @@ E435_oarfish_iso_matched_gene <- subset(E435_iso_object, cells =E435@graphs[["RN
   E333_df_iso <- E333_df_iso[rowSums(E333_df_iso) != 0, ]
   #Create iso assay
   E333[["iso"]] <- CreateAssay5Object(counts = E333_df_iso)
+
 #E435
   #Rejoin data sets after integration
   E435_oarfish_iso_matched_gene <- JoinLayers(E435_oarfish_iso_matched_gene)
@@ -329,42 +329,6 @@ E435_oarfish_iso_matched_gene <- subset(E435_iso_object, cells =E435@graphs[["RN
   saveRDS(E231, file = "/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/E231_gene_and_isoform_seurat.rds")
   saveRDS(E333, file = "/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/E333_gene_and_isoform_seurat.rds")
   saveRDS(E435, file = "/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/E435_gene_and_isoform_seurat.rds")
- 
-  
-###Test different ways you can plot
-#FOXJ1 example
-  features <- rownames(E170@assays$iso@features)
-  gene <- "FOXJ1"
-  plot_features_list <- grep(paste0("(^|-|\\b)", gene, "($|\\b)"), features, value = TRUE)
-  
-  #Plot the gene and all its corresponding isoforms on either the gene or isoform UMAPs
-    #To switch between them, simply change the reduction argument to the desired UMAP (either "umap" or "umap_iso" reduction)
-  FeaturePlot(E170, features = plot_features_list, reduction = "umap_iso") 
-  FeaturePlot(E170, features = gene, reduction = "umap")
-  
-  #Plot the isoform data on the gene level clusters
-  FeaturePlot(E170, features = plot_features_list, reduction = "umap") +
-    plot_annotation(
-      title = 'FOXJ1 isoform expresstion plotted on gene level clusters',
-      #caption = 'made with patchwork',
-      theme = theme(plot.title = element_text(size = 20)))
-  
-  
-  features <- rownames(E170@assays$iso@features)
-  gene <- "PGR"
-  plot_features_list <- grep(paste0("(^|-|\\b)", gene, "($|\\b)"), features, value = TRUE)
-  
-  #Plot the gene and all its corresponding isoforms on either the gene or isoform UMAPs
-  #To switch between them, simply change the reduction argument to the desired UMAP (either "umap" or "umap_iso" reduction)
-  FeaturePlot(E170, features = plot_features_list, reduction = "umap_iso") 
-  FeaturePlot(E170, features = gene, reduction = "umap")
-  
-  #Plot the isoform data on the gene level clusters
-  FeaturePlot(E170, features = plot_features_list, reduction = "umap") +
-    plot_annotation(
-      title = 'PGR isoform expresstion plotted on gene level clusters',
-      #caption = 'made with patchwork',
-      theme = theme(plot.title = element_text(size = 20)))
 
 #Save workspace
 save.image("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/gene_and_isoform_overlay.RData")
