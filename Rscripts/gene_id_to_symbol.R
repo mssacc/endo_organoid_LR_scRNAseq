@@ -21,16 +21,14 @@ E231_emptydrops <- read.csv("/data/gpfs/projects/punim1901/flames_v2/flames_drop
 E333_emptydrops <- read.csv("/data/gpfs/projects/punim1901/flames_v2/flames_droplet_analysis/output/E333_gene_count.csv", header=T, row.names = 1)
 E435_emptydrops <- read.csv("/data/gpfs/projects/punim1901/flames_v2/flames_droplet_analysis/output/E435_gene_count.csv", header=T, row.names = 1)
 
-
 #Import gene reference list
 gene_info <- read.csv("/home/mssacc/genomes/gene_info.csv")
+
 #Remove duplicates from reference list
 single_genes <- unique(gene_info)
 lookup_table <- setNames(single_genes$gene_symbol, single_genes$gene_id)
-		
 
 #Gene count renaming with symbols
-#rownames(gene_symbols_matrix) <- lookup_table[rownames(gene_symbols_matrix)]
 E170_gene_matrix$gene_symbol <- lookup_table[rownames(E170_gene_matrix)]
 E170_gene_matrix <- E170_gene_matrix |> 
   group_by(gene_symbol) |>
@@ -69,7 +67,6 @@ E435_gene_matrix <- E435_gene_matrix |>
 
 
 #Empty droplet renaming with symbols
-#rownames(gene_symbols_matrix) <- lookup_table[rownames(gene_symbols_matrix)]
 E170_emptydrops$gene_symbol <- lookup_table[rownames(E170_emptydrops)]
 E170_emptydrops <- E170_emptydrops |> 
   group_by(gene_symbol) |>
