@@ -98,11 +98,11 @@ for (cell in cell_types) {
             paste0("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/DETs/DE_analysis_", gsub("-", "_", cell), ".csv"),
             row.names = FALSE)
   
-  #Extract significant DETs
+  #Extract significant DEIs
   sig_res <- res %>%
     filter(padj < 0.05, abs(log2FoldChange) > 0.585)
   
-  #Save significant DETs in environment
+  #Save significant DEIs in environment
   assign(paste0("sig_res_", gsub("-", "_", cell)), sig_res, envir = .GlobalEnv)
   
   #Export sig_res to CSV
@@ -141,13 +141,13 @@ for (cell in cell_types) {
                             pCutoff = 0.05,
                             FCcutoff = 0.585,
                             pointSize = 3,
-                            axisLabSize = 14,  # <-- smaller axis labels
+                            axisLabSize = 14, 
                             labSize = 5,
                             title = paste0(cell, " DETs - Infertile vs Fertile"),
                             titleLabSize = 18,
                             subtitle = NULL,
                             legendPosition = 'none',
-                            caption = NULL)  # Remove legend for individual plots
+                            caption = NULL)
     volcano_plots[[cell]] <- plot
   }
 }
@@ -156,25 +156,22 @@ for (cell in cell_types) {
 combined_plot <- wrap_plots(volcano_plots, ncol = 3) +
   plot_annotation(theme = theme(plot.title = element_text(size = 18, hjust = 0.5))) +
   plot_layout(guides = "collect")  # Collect and display one combined legend
-
-#Display the combined plot
 print(combined_plot)
 
-#Combine DEGs into 1 dataframe
+#Combine DEIs into 1 dataframe
 #Merge them and add a column to denote the source
-merged_DETs <- bind_rows(sig_res_Pre_Unciliated      %>% mutate(source = "Pre-Unciliated"),
+merged_DEIs <- bind_rows(sig_res_Pre_Unciliated      %>% mutate(source = "Pre-Unciliated"),
                          sig_res_Unciliated          %>% mutate(source = "Unciliated"),
                          sig_res_Ciliated            %>% mutate(source = "Ciliated"),
                          sig_res_Secretory           %>% mutate(source = "Secretory"),
                          sig_res_Pre_Ciliated        %>% mutate(source = "Pre-Ciliated"),
                          sig_res_Proliferative       %>% mutate(source = "Proliferative"))
 
-# Assuming the merged DETs dataframe is 'merged_DEGs'
 unique_transcript_count <- merged_DETs %>%
   summarise(unique_transcripts = n_distinct(transcript))
 print(unique_transcript_count)
 
-write.csv(merged_DETs, "/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/DETs/merged_DETs")
+write.csv(merged_DEIs, "/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/DETs/merged_DETs.csv")
 
 
 ###Volcano plots per cell subtype
@@ -182,7 +179,7 @@ pu <- EnhancedVolcano(res_Pre_Unciliated, lab = rownames(res_Pre_Unciliated),
                       x = 'log2FoldChange', y = 'padj',
                       pCutoff = 0.05, FCcutoff = 0.585,
                       pointSize = 2, labSize = 4, axisLabSize = 14,  
-                      title = "Pre-Unciliated DETs - Infertile vs Fertile", titleLabSize = 18,
+                      title = "Pre-Unciliated DEIs - Infertile vs Fertile", titleLabSize = 18,
                       subtitle = NULL,
                       col = c("#717171","#717171","#717171","#F8766D"),
                       legendPosition = 'none', caption = NULL)
@@ -190,7 +187,7 @@ u <- EnhancedVolcano(res_Unciliated, lab = rownames(res_Unciliated),
                      x = 'log2FoldChange', y = 'padj',
                      pCutoff = 0.05, FCcutoff = 0.585,
                      pointSize = 2, labSize = 4, axisLabSize = 14,  
-                     title = "Unciliated DETs - Infertile vs Fertile", titleLabSize = 18,
+                     title = "Unciliated DEIs - Infertile vs Fertile", titleLabSize = 18,
                      subtitle = NULL,
                      col = c("#717171","#717171","#717171","#ABA300"),
                      legendPosition = 'none', caption = NULL)
@@ -198,7 +195,7 @@ c <- EnhancedVolcano(res_Ciliated, lab = rownames(res_Ciliated),
                      x = 'log2FoldChange', y = 'padj',
                      pCutoff = 0.05, FCcutoff = 0.585,
                      pointSize = 2, labSize = 4, axisLabSize = 14,  
-                     title = "Ciliated DETs - Infertile vs Fertile", titleLabSize = 18,
+                     title = "Ciliated DEIs - Infertile vs Fertile", titleLabSize = 18,
                      subtitle = NULL,
                      col = c("#717171","#717171","#717171","#0CB702"),
                      legendPosition = 'none', caption = NULL)
@@ -206,7 +203,7 @@ s <- EnhancedVolcano(res_Secretory, lab = rownames(res_Secretory),
                      x = 'log2FoldChange', y = 'padj',
                      pCutoff = 0.05, FCcutoff = 0.585,
                      pointSize = 2, labSize = 4, axisLabSize = 14,  
-                     title = "Secretory DETs - Infertile vs Fertile", titleLabSize = 18,
+                     title = "Secretory DEIs - Infertile vs Fertile", titleLabSize = 18,
                      subtitle = NULL,
                      col = c("#717171","#717171","#717171","#00BFC4"),
                      legendPosition = 'none', caption = NULL)
@@ -214,7 +211,7 @@ pc <- EnhancedVolcano(res_Pre_Ciliated, lab = rownames(res_Pre_Ciliated),
                       x = 'log2FoldChange', y = 'padj',
                       pCutoff = 0.05, FCcutoff = 0.585,
                       pointSize = 2, labSize = 4, axisLabSize = 14, 
-                      title = "Pre-Ciliated DETs - Infertile vs Fertile", titleLabSize = 18,
+                      title = "Pre-Ciliated DEIs - Infertile vs Fertile", titleLabSize = 18,
                       subtitle = NULL,
                       col = c("#717171","#717171","#717171","#849AFF"),
                       legendPosition = 'none', caption = NULL)
@@ -222,7 +219,7 @@ p <- EnhancedVolcano(res_Proliferative, lab = rownames(res_Proliferative),
                      x = 'log2FoldChange', y = 'padj',
                      pCutoff = 0.05, FCcutoff = 0.585,
                      pointSize = 2, labSize = 4, axisLabSize = 14,  
-                     title = "Proliferative DETs - Infertile vs Fertile", titleLabSize = 18,
+                     title = "Proliferative DEIs - Infertile vs Fertile", titleLabSize = 18,
                      subtitle = NULL,
                      col = c("#717171","#717171","#717171","#FF61CC"),
                      legendPosition = 'none', caption = NULL)  
@@ -232,51 +229,23 @@ combined_plot_2 <- (wrap_plots(pu, u, c, s, pc, p, ncol = 3)) +
 print(combined_plot_2)
 
 
-###Generate legend
-# Dummy data for legend
-legend_data <- data.frame(Group = factor(c("Pre-Unciliated DET", "Unciliated DET", "Ciliated DET",
-                                           "Secretory DET", "Pre-Ciliated DET", "Proliferative DET", "Not Significant"),
-                          levels = c("Pre-Unciliated DET", "Unciliated DET", "Ciliated DET",
-                                     "Secretory DET", "Pre-Ciliated DET", "Proliferative DET", "Not Significant")),
-                          x = 1:7, y = 1)
-
-# Define matching colors
-legend_colors <- c( "Pre-Unciliated DET" = "#F8766D",
-                    "Unciliated DET" = "#ABA300",
-                    "Ciliated DET" = "#0CB702",
-                    "Secretory DET" = "#00BFC4",
-                    "Pre-Ciliated DET" = "#849AFF",
-                    "Proliferative DET" = "#FF61CC",
-                    "Not Significant" = "#717171")
-
-# Generate the plot
-ggplot(legend_data, aes(x = x, y = y, color = Group)) +
-  geom_point(size = 5) +
-  scale_color_manual(values = legend_colors) +
-  guides(color = guide_legend(override.aes = list(size = 5), nrow = 7)) +  # <-- force single row
-  theme_void() +
-  theme(legend.position = "right",
-        legend.title = element_blank(),
-        legend.text = element_text(size = 12))
-
-
 #Heatmap
-# Pivot: transcripts as rows, cell types as columns, log2FoldChange as values
+#Pivot: transcripts as rows, cell types as columns, log2FoldChange as values
 fc_matrix <- merged_DETs %>%
   select(transcript, source, log2FoldChange) %>%
   pivot_wider(names_from = source, values_from = log2FoldChange)
 
-# Replace NA with 0 (genes not DE in that subtype)
+#Replace NA with 0 (genes not DE in that subtype)
 fc_matrix[is.na(fc_matrix)] <- 0
 
-# Set gene names as rownames and remove the gene column
+#Set gene names as rownames and remove the gene column
 rownames(fc_matrix) <- fc_matrix$transcript
 fc_matrix <- as.matrix(fc_matrix[,-1])
 
-# Generate the heatmap
+#Generate the heatmap
 pheatmap(fc_matrix,
          scale = "row",  # Use "row" if you want z-scores
          cluster_rows = TRUE,
          cluster_cols = TRUE,
-         main = "Cell Subtype DETs - Infertile vs Fertile",
+         main = "Cell Subtype DEIs - Infertile vs Fertile",
          fontsize_row = 6)
