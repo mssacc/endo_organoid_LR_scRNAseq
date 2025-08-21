@@ -35,6 +35,7 @@ for (cell in cell_types) {
   
   #Subset Seurat object
   subset_obj <- subset(all_samples_integrated, subset = cell_type == cell)
+  
   #Aggregate pseudobulk counts
   pseudobulk_counts <- AggregateExpression(subset_obj,
                                            group.by = c("orig.ident", "batch", "fertility"),
@@ -144,21 +145,13 @@ merged_DEGs <- bind_rows(sig_res_Pre_Unciliated      %>% mutate(source = "Pre-Un
                          sig_res_Secretory           %>% mutate(source = "Secretory"),
                          sig_res_Pre_Ciliated        %>% mutate(source = "Pre-Ciliated"),
                          sig_res_Proliferative       %>% mutate(source = "Proliferative"))
+
 #Total number of uniques genes across all cell subtypes
 unique_genes_count <- merged_DEGs %>%
   summarise(unique_genes = n_distinct(gene))
 print(unique_genes_count)
 
-write.csv(merged_DEGs, "/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/DEGs/merged_DEGs")
-
-
-#Asses uncharacterized genes
-uncharacterized_genes <- merged_DEGs %>%
-  filter(grepl("^(AC|AP|AL|BX|FP|FO)[0-9]+(\\.[0-9]+)?$", gene))
-unique_uncharacterized_genes <- uncharacterized_genes %>%
-  summarise(unique_genes = n_distinct(gene))
-print(unique_uncharacterized_genes)
-
+write.csv(merged_DEGs, "/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/DEGs/merged_DEGs.csv")
 
 
 ###Volcano plots per cell subtype
@@ -207,50 +200,3 @@ p <- EnhancedVolcano(res_Proliferative, lab = rownames(res_Proliferative),
 
 (wrap_plots(pu, u, c, s, pc, p, ncol = 3)) +
   plot_annotation(theme = theme(plot.title = element_text(size = 18, hjust = 0.5)))
-
-
-###Generate legend
-#Dummy data for legend
-legend_data <- data.frame(
-  Group = factor(c("Pre-Unciliated DEG", "Unciliated DEG", "Ciliated DEG",
-                   "Secretory DEG", "Pre-Ciliated DEG", "Proliferative DEG", "Not Significant"),
-  levels = c("Pre-Unciliated DEG", "Unciliated DEG", "Ciliated DEG",
-             "Secretory DEG", "Pre-Ciliated DEG", "Proliferative DEG", "Not Significant")),
-  x = 1:7, y = 1)
-
-#Define matching colors
-legend_colors <- c("Pre-Unciliated DEG" = "#F8766D", 
-                   "Unciliated DEG" = "#ABA300",
-                   "Ciliated DEG" = "#0CB702",
-                   "Secretory DEG" = "#00BFC4",
-                   "Pre-Ciliated DEG" = "#849AFF",
-                   "Proliferative DEG" = "#FF61CC",
-                   "Not Significant" = "#717171")
-
-#Generate the plot
-ggplot(legend_data, aes(x = x, y = y, color = Group)) +
-  geom_point(size = 5) +
-  scale_color_manual(values = legend_colors) +
-  guides(color = guide_legend(override.aes = list(size = 5), nrow = 7)) +  # <-- force single row
-  theme_void() +
-  theme(legend.position = "right",
-        legend.title = element_blank(),
-        legend.text = element_text(size = 12))
-
-
-###Heatmap
-#Pivot: genes as rows, cell types as columns, log2FoldChange as values
-fc_matrix <- merged_DEGs %>%
-  select(gene, source, log2FoldChange) %>%
-  pivot_wider(names_from = source, values_from = log2FoldChange)
-#Replace NA with 0 (genes not DE in that subtype)
-fc_matrix[is.na(fc_matrix)] <- 0
-#Set gene names as rownames and remove the gene column
-rownames(fc_matrix) <- fc_matrix$gene
-fc_matrix <- as.matrix(fc_matrix[,-1])
-#Generate the heatmap
-pheatmap(fc_matrix,
-         scale = "row",  #Use "row" if you want z-scores
-         cluster_rows = TRUE, cluster_cols = TRUE,
-         main = "Cell Subtype DEGs - Infertile vs Fertile",
-         fontsize_row = 6)
