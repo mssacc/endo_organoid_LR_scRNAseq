@@ -1,4 +1,4 @@
-###DTU comparison
+###DTU comparison - Rscript
 
 #Load required libraries
 library(dplyr)
@@ -11,8 +11,7 @@ library(readxl)
 #Helper function to remove version numbers from ENST IDs
 strip_version <- function(id) sub("\\.\\d+$", "", id)
 
-#Step 1 - Filter DTU transcripts found in ≥2 of 3 methods (ISA, DTUrtle, isopod)
-
+#Step 1: Filter DTU transcripts found in ≥2 of 3 methods (ISA, DTUrtle, isopod)
 #Load DETs
 pre_unciliated_df <- read.csv("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/DETs/DE_analysis_Pre_Unciliated.csv")
 unciliated_df     <- read.csv("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/DETs/DE_analysis_Unciliated.csv")
@@ -38,43 +37,45 @@ DE_results_iso <- DE_results %>%
 file_path <- "/data/gpfs/projects/punim1901/SC_paper/DTU_comparison_new.xlsx"
 
 ISA <- read_excel(file_path, sheet = "ISA") %>%
-  select(cell_type, transcript_id, gene_name) %>%
+  dplyr::select(cell_type, transcript_id, gene_name) %>%
   distinct() %>%
-  mutate(dataset = "ISA", transcript_id = strip_version(transcript_id))
+  mutate(dataset = "ISA",
+         transcript_id = strip_version(transcript_id))
 
 DTUrtle <- read_excel(file_path, sheet = "DTUrtle") %>%
-  select(cell_type, transcript_id, gene_name) %>%
+  dplyr::select(cell_type, transcript_id, gene_name) %>%
   distinct() %>%
-  mutate(dataset = "DTUrtle", transcript_id = strip_version(transcript_id))
+  mutate(dataset = "DTUrtle",
+         transcript_id = strip_version(transcript_id))
 
 isopod <- read_excel(file_path, sheet = "IsoPod") %>%
-  select(cell_type, transcript_id, gene_name) %>%
+  dplyr::select(cell_type, transcript_id, gene_name) %>%
   distinct() %>%
-  mutate(dataset = "isopod", transcript_id = strip_version(transcript_id))
+  mutate(dataset = "isopod",
+         transcript_id = strip_version(transcript_id))
 
 #Create join keys
 ISA <- ISA %>% mutate(join_key = paste(cell_type, transcript_id, sep = "_"))
 DTUrtle <- DTUrtle %>% mutate(join_key = paste(cell_type, transcript_id, sep = "_"))
 isopod <- isopod %>% mutate(join_key = paste(cell_type, transcript_id, sep = "_"))
-
 DE_results_iso <- DE_results_iso %>%
   mutate(join_key = paste(source, transcript_id, sep = "_"))
 
-#Mark DETs
+#Mark DTUs that are also DEIs
 ISA <- ISA %>%
   mutate(DET = if_else(join_key %in% DE_results_iso$join_key, "Yes", "No")) %>%
-  select(-join_key)
+  dplyr::select(-join_key)
 DTUrtle <- DTUrtle %>%
   mutate(DET = if_else(join_key %in% DE_results_iso$join_key, "Yes", "No")) %>%
-  select(-join_key)
+  dplyr::select(-join_key)
 isopod <- isopod %>%
   mutate(DET = if_else(join_key %in% DE_results_iso$join_key, "Yes", "No")) %>%
-  select(-join_key)
+  dplyr::select(-join_key)
 
 #Combine DTU results
 dtu_combined <- bind_rows(ISA, DTUrtle, isopod) %>%
   filter(DET == "Yes") %>%
-  select(cell_type, transcript_id, dataset)
+  dplyr::select(cell_type, transcript_id, dataset)
 
 #Count number of datasets per (cell_type, transcript_id) pair
 dtu_freq <- dtu_combined %>%
@@ -86,19 +87,20 @@ dtu_freq <- dtu_combined %>%
 DTU_DET <- dtu_freq %>%
   filter(n_methods >= 2)
 
-#Step 2 - Filter DE_results_iso and join transcript names
+#Step 2: Filter DE_results_iso and join transcript names
 #Join DTU_DET to DE_results_iso using both transcript_id and source/cell_type
 filtered_DE <- DE_results_iso %>%
   inner_join(DTU_DET, by = c("transcript_id", "source" = "cell_type"))
 
-#Join to get full transcript names (after filtering)
+#Join to get full transcript names
 filtered_DE <- filtered_DE %>%
   left_join(DE_results %>%
       mutate(transcript_id_match = strip_version(str_extract(transcript, "^[^-]+"))) %>%
-      select(transcript_id_match, source, transcript),
+      dplyr::select(transcript_id_match, source, transcript),
     by = c("transcript_id" = "transcript_id_match", "source"))
 
-#Step 3 - Prepare Heatmap Matrix
+
+#Step 3: Prepare heatmap matrix
 logFC_mat_df <- filtered_DE %>%
   group_by(transcript, source) %>%
   summarise(log2FoldChange = mean(log2FoldChange, na.rm = TRUE), .groups = "drop")
@@ -120,7 +122,7 @@ logFC_wide <- logFC_wide[order(-annotation_row$avg_log2FC), ]
 logFC_wide <- logFC_wide[!rownames(logFC_wide) %in% "ENST00000567998.5-SULT1A1", ]
 
 
-#Step 4 - Plot Heatmap
+#Step 4: Plot heatmap
 my_breaks <- seq(-8, 8, length.out = 100)
 legend_ticks <- seq(-8, 8, by = 2)
 
