@@ -227,25 +227,3 @@ p <- EnhancedVolcano(res_Proliferative, lab = rownames(res_Proliferative),
 combined_plot_2 <- (wrap_plots(pu, u, c, s, pc, p, ncol = 3)) +
   plot_annotation(theme = theme(plot.title = element_text(size = 18, hjust = 0.5)))
 print(combined_plot_2)
-
-
-#Heatmap
-#Pivot: transcripts as rows, cell types as columns, log2FoldChange as values
-fc_matrix <- merged_DETs %>%
-  select(transcript, source, log2FoldChange) %>%
-  pivot_wider(names_from = source, values_from = log2FoldChange)
-
-#Replace NA with 0 (genes not DE in that subtype)
-fc_matrix[is.na(fc_matrix)] <- 0
-
-#Set gene names as rownames and remove the gene column
-rownames(fc_matrix) <- fc_matrix$transcript
-fc_matrix <- as.matrix(fc_matrix[,-1])
-
-#Generate the heatmap
-pheatmap(fc_matrix,
-         scale = "row",  # Use "row" if you want z-scores
-         cluster_rows = TRUE,
-         cluster_cols = TRUE,
-         main = "Cell Subtype DEIs - Infertile vs Fertile",
-         fontsize_row = 6)
