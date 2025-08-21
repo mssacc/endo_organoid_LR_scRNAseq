@@ -319,7 +319,7 @@ gsea_files <- list.files(
   path = "/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/GSEA/",
   pattern = "^fgsea_.*\\.csv$",
   full.names = TRUE) %>%
-  .[!grepl("_bulk_", .)]
+  .[!grepl("_bulk_", .) & !grepl("ubiquitination", ., ignore.case = TRUE)]
 
 #Extract Subtype and Category from filename
 parse_gsea_filename <- function(filename) {
@@ -468,7 +468,7 @@ ggplot(category_summary_percent, aes(x = fertility, y = percentage, fill = struc
 
 
 #C - Up and downregulated TRANSCRIPTS of each cell subtype
-#Load DETs with full data (assuming 'gene' and 'log2FoldChange' columns exist)
+#Load DETs
 pre_unciliated_df <- read.csv("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/DETs/DETs_Pre_Unciliated.csv")
 unciliated_df     <- read.csv("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/DETs/DETs_Unciliated.csv")
 ciliated_df       <- read.csv("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/DETs/DETs_Ciliated.csv")
@@ -483,13 +483,12 @@ count_regulation <- function(df) {
   return(data.frame(Direction = c("Upregulated", "Downregulated"), Count = c(up, down)))}
 
 #Combine all counts
-det_counts <- bind_rows(
-  count_regulation(pre_unciliated_df) %>% mutate(CellSubtype = "Pre-Unciliated"),
-  count_regulation(unciliated_df)     %>% mutate(CellSubtype = "Unciliated"),
-  count_regulation(pre_ciliated_df)   %>% mutate(CellSubtype = "Pre-Ciliated"),
-  count_regulation(ciliated_df)       %>% mutate(CellSubtype = "Ciliated"),
-  count_regulation(secretory_df)      %>% mutate(CellSubtype = "Secretory"),
-  count_regulation(proliferative_df)  %>% mutate(CellSubtype = "Proliferative"))
+det_counts <- bind_rows(count_regulation(pre_unciliated_df) %>% mutate(CellSubtype = "Pre-Unciliated"),
+                        count_regulation(unciliated_df)     %>% mutate(CellSubtype = "Unciliated"),
+                        count_regulation(pre_ciliated_df)   %>% mutate(CellSubtype = "Pre-Ciliated"),
+                        count_regulation(ciliated_df)       %>% mutate(CellSubtype = "Ciliated"),
+                        count_regulation(secretory_df)      %>% mutate(CellSubtype = "Secretory"),
+                        count_regulation(proliferative_df)  %>% mutate(CellSubtype = "Proliferative"))
 
 #Set plotting order
 det_counts$CellSubtype <- factor(det_counts$CellSubtype, levels = c(
@@ -548,6 +547,7 @@ subtype_lists <- list(Pre_Unciliated = pre_unciliated_DETs,
 
 #Create full gene list (no bulk)
 all_transcripts <- unique(unlist(subtype_lists))
+
 #Create presence matrix
 presence_matrix <- data.frame(Transcript = all_transcripts,
                               Pre_Unciliated = all_transcripts %in% subtype_lists$Pre_Unciliated,
@@ -556,6 +556,7 @@ presence_matrix <- data.frame(Transcript = all_transcripts,
                               Secretory      = all_transcripts %in% subtype_lists$Secretory,
                               Pre_Ciliated   = all_transcripts %in% subtype_lists$Pre_Ciliated,
                               Proliferative  = all_transcripts %in% subtype_lists$Proliferative)
+
 #Prepare matrix for UpSetR
 rownames(presence_matrix) <- presence_matrix$Transcript
 presence_matrix <- presence_matrix[, -1]
@@ -564,7 +565,6 @@ rownames(numeric_df) <- rownames(presence_matrix)
 original_names <- c("Pre-Unciliated", "Unciliated", "Ciliated", "Secretory", "Pre-Ciliated", "Proliferative")
 colnames(numeric_df) <- original_names
 
-#Upset Plot
 upset(numeric_df, sets = original_names, nsets = length(original_names),
       nintersects = NA, order.by = "freq",
       mainbar.y.label = "DEI Cross-section", sets.x.label = "Total DEIs in Each Cell Subtype", 
@@ -574,7 +574,7 @@ upset(numeric_df, sets = original_names, nsets = length(original_names),
 
 #E - Venn diagram of DTU overlap
 #Read in the combined dataset from Excel
-combined_data <- read_excel("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/DTU_final.xlsx")  # Update path
+combined_data <- read_excel("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/DTU_final.xlsx")
 
 #Clean transcript IDs (remove version numbers from ENST/Bambu/etc.)
 combined_data$Transcript <- gsub("\\.\\d+$", "", combined_data$Transcript)
@@ -674,20 +674,8 @@ isopod <- isopod %>% mutate(join_key = paste(cell_type, transcript_id, sep = "_"
 DE_results_iso <- DE_results_iso %>%
   mutate(join_key = paste(source, transcript_id, sep = "_"))
 
-#Mark DETs
-ISA <- ISA %>%
-  mutate(DET = if_else(join_key %in% DE_results_iso$join_key, "Yes", "No")) %>%
-  select(-join_key)
-DTUrtle <- DTUrtle %>%
-  mutate(DET = if_else(join_key %in% DE_results_iso$join_key, "Yes", "No")) %>%
-  select(-join_key)
-isopod <- isopod %>%
-  mutate(DET = if_else(join_key %in% DE_results_iso$join_key, "Yes", "No")) %>%
-  select(-join_key)
-
 #Combine DTU results
 dtu_combined <- bind_rows(ISA, DTUrtle, isopod) %>%
-  filter(DET == "Yes") %>%
   select(cell_type, transcript_id, dataset)
 
 #Count number of datasets per (cell_type, transcript_id) pair
@@ -924,7 +912,7 @@ p4 <- switchPlotIsoExp(proliferative_DTU, gene = "HLA-C",
                        addErrorbars = FALSE, alphas = c(0.05, 0.05),
                        localTheme = theme_bw(base_size = 13))
 
-# Generate isoform usage plots
+#Generate isoform usage plots
 p5 <- switchPlotIsoUsage(unciliated_DTU, gene = "HLA-C",
                          condition1 = "Fertile", condition2 = "Infertile",
                          localTheme = theme_bw(base_size = 13))
@@ -969,7 +957,6 @@ row1 <- p1 | p2 | p3 | p4
 row2 <- p5 | p6 | p7 | p8
 (row1 / row2) + plot_layout(guides = "collect") & theme(legend.position = "right")
 
-
 #E - HLA-C IsoVis
 #F - HLA-C AlphaFold
 
@@ -981,7 +968,6 @@ data(dorothea_hs, package = "dorothea")
 net <- dorothea_hs                   
 net = dorothea_hs %>%
   filter(confidence %in% c("A","B","C"))
-
 net <- net[,c('tf','target','mor','confidence')]
 colnames(net) <- c('source','target','mor','confidence')
 
@@ -1035,7 +1021,6 @@ desired_order <- c("Pre-Unciliated", "Unciliated", "Ciliated", "Secretory", "Pre
 tf_matrix <- tf_matrix[, intersect(desired_order, colnames(tf_matrix))]
 breaks_continuous <- seq(-2, 2, by = 0.1)
 legend_ticks <- seq(-2, 2, by = 1)
-
 my_colors <- colorRampPalette(rev(brewer.pal(n = 11, name = "RdYlBu")))(length(breaks_continuous) - 1)
 
 pheatmap(as.matrix(tf_matrix),
@@ -1132,8 +1117,6 @@ combined_DE <- combined_DE %>%
 #Print out DEIs that are also TFs
 results <- combined_DE
 results$sig <- ifelse(abs(results$log2FoldChange) >=0.585 & results$padj<0.05,TRUE,FALSE)
-
-#Pull out DEIs that are TFs
 DEGTFs <- results %>%
   filter(gene %in% net$source & sig)
 
@@ -1187,7 +1170,6 @@ for (col in missing_cols) {
 #Reorder columns
 tf_matrix <- tf_matrix[, desired_order]
 
-#Proceed with heatmap plotting as before
 breaks_continuous <- seq(-3, 3, by = 0.1)
 legend_ticks <- seq(-3, 3, by = 1)
 my_colors <- colorRampPalette(rev(brewer.pal(n = 11, name = "RdYlBu")))(length(breaks_continuous) - 1)
@@ -1408,7 +1390,7 @@ pathways_go_bp <- split(msigdb_go_bp$gene_symbol, msigdb_go_bp$gs_name)
 
 all_pathways <- list(Hallmark = pathways_hallmark, GO_BP = pathways_go_bp)
 
-#Load the "all_substrates" sheet from your Excel file
+#Load the "all_substrates" sheet from Excel file
 substrate_file <- "/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/ubiquitination_assessment.xlsx"  # Change if needed
 df <- read_excel(substrate_file, sheet = "all_substrates")
 
@@ -1486,10 +1468,8 @@ clustree + theme(axis.text = element_text(size = 0), axis.title = element_text(s
                  legend.title = element_text(size = 13)) +
   labs(edge_alpha = "Proportion", colour = "Resolution", size = "Node Size")
 
-
 #B - Epithelial cell marker genes
 FeaturePlot(all_samples_integrated, reduction="umap", features=c("EPCAM","CDH1","KRT8"), ncol=3)
-
 
 #C - Stem cell marker genes
 FeaturePlot(all_samples_integrated, reduction="umap", features=c("SOX9","AXIN2","CDH2","FUT4"), ncol=4)
@@ -1621,12 +1601,13 @@ ggplot(counts, aes(x = sample, y = percentage, fill = cell_type)) +
         axis.title = element_text(size = 16),
         legend.text = element_text(size = 14),
         legend.title = element_text(size = 14, face = "bold"))
-
+                
 
 
 ### ====================================================================================================================
 ###Supplementary Figure 3 - Cell-cell signalling
 colours.celltype <- c("#F8766D","#ABA300","#0CB702","#00BFC4","#849AFF","#FF61CC")
+                
 #A - Cell populations with significant changes in sending or receiving signals
 #Compute centrality for both objects
 object.list[[1]] <- netAnalysis_computeCentrality(object.list[[1]])
@@ -1884,7 +1865,6 @@ names(keyvals)[keyvals ==  'palegreen3'] <- 'Up in Infertile'
 names(keyvals)[keyvals ==  '#F8766D'] <-    'Down in Infertile'
 names(keyvals)[keyvals ==  '#717171'] <-    'Not Significant'
 
-#Make voclano plot
 p <- EnhancedVolcano(bulk_DE, lab = bulk_DE$gene,
                      x = 'log2FoldChange', y = 'padj',
                      pCutoff = 0.05, FCcutoff = 0.585,
@@ -2041,7 +2021,7 @@ for (cell_subtype in names(gene_lists)) {
   #Create heatmap matrix
   heatmap_matrix <- as.matrix(avg_matrix_log[gene_list_filtered, , drop = FALSE])
   
-  #Sort by Fertile column
+  #Sort by fertile column
   gene_order <- order(heatmap_matrix[, "Fertile"], decreasing = TRUE)
   heatmap_matrix_ordered <- heatmap_matrix[gene_order, , drop = FALSE]
   
@@ -2080,36 +2060,36 @@ DE_results <- bind_rows(pre_unciliated_DE  %>% mutate(source = "Pre-Unciliated")
 common_genes <- c("ABHD15-AS1","AC021733.3","AC026202.2","AC079447.1","AL109955.1","AL365273.2",
                   "AP000462.1","AP002748.4","AP003096.1","CC2D2B","KRT8","RPS10-NUDT3","SLC19A1","UPK1B")
 
-#Filter for genes of interest and select relevant columns including padj
+#Filter for genes of interest and select relevant columns
 filtered_DE <- DE_results %>%
   filter(gene %in% common_genes) %>%
   select(gene, source, log2FoldChange, padj)
 
-# Pivot log2FoldChange wide for heatmap expression data
+#Pivot log2FoldChange wide for heatmap expression data
 expression_data <- filtered_DE %>%
   select(gene, source, log2FoldChange) %>%
   pivot_wider(names_from = gene, values_from = log2FoldChange) %>%
   column_to_rownames("source")
 
-# Reorder subtypes (rows)
+#Reorder subtypes (rows)
 sample_order <- c("Pre-Unciliated", "Unciliated", "Ciliated", "Secretory", "Pre-Ciliated", "Proliferative")
 expression_data <- expression_data[sample_order, ]
 
-# Order genes by increasing mean log2FC
+#Order genes by increasing mean log2FC
 gene_means <- colMeans(expression_data, na.rm = TRUE)
 ordered_genes <- names(sort(gene_means))
 expression_data <- expression_data[, ordered_genes]
 
-# Pivot padj wide in same format for significance matrix
+#Pivot padj wide in same format for significance matrix
 sig_data <- filtered_DE %>%
   select(gene, source, padj) %>%
   pivot_wider(names_from = gene, values_from = padj) %>%
   column_to_rownames("source")
 
-# Reorder rows and columns in sig_data to match expression_data exactly
+#Reorder rows and columns in sig_data to match expression_data exactly
 sig_data <- sig_data[sample_order, ordered_genes]
 
-# Map padj to significance symbols
+#Map padj to significance symbols
 sig_mat <- matrix("", nrow = nrow(sig_data), ncol = ncol(sig_data),
                   dimnames = dimnames(sig_data))
 
@@ -2117,9 +2097,8 @@ sig_mat[sig_data < 0.0001] <- "****"
 sig_mat[sig_data >= 0.0001 & sig_data < 0.001] <- "***"
 sig_mat[sig_data >= 0.001 & sig_data < 0.01] <- "**"
 sig_mat[sig_data >= 0.01 & sig_data < 0.05] <- "*"
-# Else leave ""
 
-# Plot heatmap with significance symbols
+#Plot heatmap with significance symbols
 pheatmap(expression_data,
          cluster_rows = FALSE, cluster_cols = FALSE,
          angle_col = 45, cellwidth = 50,
@@ -2155,7 +2134,7 @@ fgsea_all <- bind_rows(fgsea_list)
 #Filter for significant pathways
 fgsea_all <- fgsea_all %>% filter(pval < 0.05)
 
-#Keep top 6 pathways per subtype and category
+#Keep top pathways per subtype and category
 top_fgsea <- fgsea_all %>%
   group_by(Subtype, Category) %>%
   slice_min(order_by = pval, n = 50) %>%
@@ -2240,7 +2219,7 @@ wrap_plots(plots_rotated, ncol = 1)
 
 
 ### ====================================================================================================================
-###Supplementary Figure 7 - DETs
+###Supplementary Figure 6 - DETs
 #A - Coding isoforms
 ggplot(category_summary %>% filter(!is.na(coding)),  # Remove NA values
        aes(x = fertility, y = num_isoforms, fill = coding)) +
@@ -2637,7 +2616,7 @@ grid.arrange(grobs = venn_plots, ncol = 6,
 
 
 #B - DEI biotype classification
-#Load DETs with full data (assuming 'gene' and 'log2FoldChange' columns exist)
+#Load DETs
 pre_unciliated_df <- read.csv("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/DETs/DETs_Pre_Unciliated.csv")
 unciliated_df     <- read.csv("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/DETs/DETs_Unciliated.csv")
 ciliated_df       <- read.csv("/data/gpfs/projects/punim1901/flames_v2/seurat_workspace/DETs/DETs_Ciliated.csv")
@@ -2796,7 +2775,7 @@ total_expression <- Matrix::rowSums(subset_expression)
 #Rank features by average expression
 top_features <- names(sort(total_expression, decreasing = TRUE))
 
-#Plot the top 16 features in descending order of their average expression
+#Plot the top features in descending order of their average expression
 plots <- FeaturePlot(all_samples_integrated, features = head(top_features, 12), reduction = "umap",
                      order = TRUE, pt.size = 1)
 
@@ -2839,7 +2818,7 @@ total_expression <- Matrix::rowSums(subset_expression)
 #Rank features by average expression
 top_features <- names(sort(total_expression, decreasing = TRUE))
 
-#Plot the top 16 features in descending order of their average expression
+#Plot the top features in descending order of their average expression
 plots <- FeaturePlot(all_samples_integrated, features = head(top_features, 12), reduction = "umap",
                      order = TRUE, pt.size = 1)
 
