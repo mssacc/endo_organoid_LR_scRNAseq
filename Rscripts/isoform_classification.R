@@ -205,3 +205,48 @@ num_bambu_isoforms <- merged_biomart_data %>%
   nrow()
 
 cat("Number of unique BambuTx isoforms:", num_bambu_isoforms, "\n")
+
+
+# ======================================================================================================================
+###Number of isoforms per gene
+#Aggregate the expresstion data by cell type 
+counts <- AggregateExpression(all_samples_integrated, 
+                              assays = "iso", 
+                              return.seurat = FALSE,
+                              group.by = "cell_type")
+
+as.data.frame(counts) -> df
+row.names(df) -> df$gene
+
+#split transcript ids into gene and transcript id
+pseudobulk_data <- df %>% separate(gene, into = c("transcript_id", "gene_id"), sep = "-",  extra = "merge") 
+
+#Count the number of isoforms per gene
+isoform_count_per_gene <- pseudobulk_data %>%
+  group_by(gene_id) %>%
+  summarise(n_isoforms = n_distinct(transcript_id))
+
+#Count isforms per category 
+isoform_count_per_gene <- isoform_count_per_gene %>%
+  mutate(isoform_category = case_when(
+    n_isoforms == 1 ~ "1",
+    n_isoforms >= 2 & n_isoforms <= 3 ~ "2-3",
+    n_isoforms >= 4 & n_isoforms <= 5 ~ "4-5",
+    n_isoforms >= 6 ~ "6+"))
+
+#Calculate the percentage of genes in each bin
+isoform_count_summary <- isoform_count_per_gene %>%
+  dplyr::count(isoform_category) %>%
+  mutate(percent = (n / sum(n)) * 100)
+
+ggplot(isoform_count_summary, aes(x = isoform_category, y = percent)) +
+  geom_bar(stat = "identity", fill = "#849AFF", color = "black") +  
+  labs(title = "Number of Isoforms per Gene", 
+       x = "Isoforms per Gene", y = "Genes Percentage") +
+  theme_minimal() +
+  theme(legend.position = "none", 
+        plot.title = element_text(hjust = 0.5, face = "bold"),
+        axis.text.y = element_text(size = 11),
+        axis.text.x = element_text(size = 11),
+        axis.title.y = element_text(size = 12),
+        axis.title.x = element_text(size = 12))
