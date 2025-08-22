@@ -84,7 +84,7 @@ category_summary <- filtered_data %>%
               num_isoforms = n_distinct(transcript_id),
               .groups = "drop")
             
-#Plot number of isoforms per structural category for each cell type
+#Plot number of isoforms per structural category
 p2 <- ggplot(category_summary, aes(x = all_cells, y = num_isoforms, fill = structural_category)) +
         geom_bar(stat = "identity", position = "stack", width = 0.8) +
         theme_minimal() +
@@ -97,7 +97,8 @@ p2 <- ggplot(category_summary, aes(x = all_cells, y = num_isoforms, fill = struc
               axis.text.y = element_text(size = 12),
               legend.title = element_text(size = 14),
               legend.text = element_text(size = 12))
-            
+
+#Plot isoforms by structural subcategory            
 p3 <- ggplot(category_summary, aes(x = all_cells, y = num_isoforms, fill = subcategory)) +
        geom_bar(stat = "identity", position = "stack", width = 0.8) +
        theme_minimal() +
@@ -110,13 +111,14 @@ p3 <- ggplot(category_summary, aes(x = all_cells, y = num_isoforms, fill = subca
             axis.text.y = element_text(size = 12),
             legend.title = element_text(size = 14),
             legend.text = element_text(size = 12))
-                  
+
+#Plot coding vs non-coding isoforms  
 p4 <- ggplot(category_summary, aes(x = all_cells, y = num_isoforms, fill = coding)) +
         geom_bar(stat = "identity", position = "fill", width = 0.8) +
         theme_minimal() +
         labs(title = "Proportion of coding isoforms",
              y = "Proportion of Isoforms", fill = "Structural Category") +
-        scale_y_continuous(labels = scales::percent) + 
+        scale_y_continuous(labels = scales::percent) +  # This will show y-axis as percentages
         theme(plot.title = element_text(size = 20, face = "bold", hjust = 0.5),
               axis.title.x = element_text(size = 14),
               axis.title.y = element_text(size = 14),
@@ -125,9 +127,11 @@ p4 <- ggplot(category_summary, aes(x = all_cells, y = num_isoforms, fill = codin
               legend.title = element_text(size = 14),
               legend.text = element_text(size = 12))
             
-#Plots
 cowplot::plot_grid(p1, p2, p3, p4, ncol = 2)
 
+
+#Remove version numbers from transcript IDs
+filtered_data$transcript_id <- sub("\\..*$", "", filtered_data$transcript_id)
 
 #Retrieve gene biotype from Ensembl
 mart <- useEnsembl(biomart = "ENSEMBL_MART_ENSEMBL",
@@ -138,8 +142,10 @@ biotype_info_transcript <- getBM(attributes = c("ensembl_transcript_id","transcr
                                  values = filtered_data$transcript_id, mart = mart)
 
 #Merge BioMart data into filtered expression data
-merged_biomart_data <- merge(filtered_data, biotype_info_transcript, 
-                             by.x = "transcript_id", by.y = "ensembl_transcript_id", all.x = TRUE)
+merged_biomart_data <- merge(filtered_data, biotype_info_transcript,
+                             by.x = "transcript_id",
+                             by.y = "ensembl_transcript_id",
+                             all.x = TRUE)
 
 #Reassign transcript_biotype to "BambuTx" if transcript_id starts with "BambuTx"
 merged_biomart_data$transcript_id <- trimws(as.character(merged_biomart_data$transcript_id))
@@ -155,28 +161,38 @@ category_summary <- merged_biomart_data %>%
 
 #Group transcript_biotypes with proportion < 0.5% into "Other"
 category_summary <- category_summary %>%
-  mutate(transcript_biotype = ifelse(proportion < 0.005, "Other", as.character(transcript_biotype))) %>%
+  mutate(transcript_biotype = ifelse(proportion < 0.005, "Other", transcript_biotype)) %>%
   group_by(transcript_biotype) %>%
   summarise(num_isoforms = sum(num_isoforms), .groups = "drop") %>%
   mutate(proportion = num_isoforms / sum(num_isoforms)) %>%
   ungroup()
 
+#Ensure consistent factor order
+category_summary <- category_summary %>%
+  mutate(transcript_biotype = factor(transcript_biotype, levels = c(
+    "protein_coding", "lncRNA", "retained_intron", "processed_transcript",
+    "nonsense_mediated_decay", "BambuTx", "processed_pseudogene", "TEC", "Other")))
+
+#Custom labels
+biotype_labels <- c(protein_coding = "Protein Coding",
+                    lncRNA = "lncRNA",
+                    retained_intron = "Retained Intron",
+                    processed_transcript = "Processed Transcript",
+                    nonsense_mediated_decay = "NMD",
+                    BambuTx = "BambuTx",
+                    processed_pseudogene = "Processed Pseudogene",
+                    TEC = "TEC",
+                    Other = "Other")
+
 #Create pie chart of transcript subtypes
 ggplot(category_summary, aes(x = "", y = proportion, fill = transcript_biotype)) +
-  geom_bar(stat = "identity", width = 1, colour="black", size=0.2) +  
+  geom_bar(stat = "identity", width = 1, colour = "black", size = 0.2) +  
   coord_polar(theta = "y", start = pi / 6) +
-  scale_fill_discrete(
-    labels = c("protein_coding" = "Protein Coding", "lncRNA" = "lncRNA", 
-               "retained_intron" = "Retained Intron", "processed_transcript" = "Processed Transcript",
-               "nonsense_mediated_decay" = "NMD","BambuTx" = "BambuTx",
-               "processed_pseudogene" = "Processed Pseudogene", "TEC" = "TEC", "Other" = "Other")) +
+  scale_fill_discrete(labels = biotype_labels) +
   labs(title = "BioMart Transcript Biotypes", fill = "Transcript Biotypes") +
   theme_void() +
   theme(plot.title = element_text(size = 20, face = "bold", hjust = 0.5, margin = margin(b = 10)),
         plot.margin = margin(10, 100, 10, 10),
-        axis.title = element_blank(),
-        axis.text = element_blank(),
-        axis.ticks = element_blank(),
         legend.title = element_text(size = 13, face = "bold"),
         legend.text = element_text(size = 12),
         strip.text = element_text(size = 14, face = "bold", margin = margin(b = 0)),
